@@ -32,12 +32,17 @@
             </div>
 
             <!-- Week selector -->
-            <div class="flex space-x-2 mb-4">
-                <button onclick="changeWeek(1)" class="week-btn px-4 py-2 bg-blue-500 text-white rounded" data-week="1">Week 1</button>
-                <button onclick="changeWeek(2)" class="week-btn px-4 py-2 bg-gray-300 text-gray-700 rounded" data-week="2">Week 2</button>
-                <button onclick="changeWeek(3)" class="week-btn px-4 py-2 bg-gray-300 text-gray-700 rounded" data-week="3">Week 3</button>
-                <button onclick="changeWeek(4)" class="week-btn px-4 py-2 bg-gray-300 text-gray-700 rounded" data-week="4">Week 4</button>
-            </div>
+            <!-- Inside index.html - update week selector buttons -->
+<div class="flex flex-wrap space-x-1 mb-4">
+    <button onclick="changeWeek(1)" class="week-btn px-3 py-1 bg-blue-500 text-white rounded text-sm" data-week="1">Week 1</button>
+    <button onclick="changeWeek(2)" class="week-btn px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm" data-week="2">Week 2</button>
+    <button onclick="changeWeek(3)" class="week-btn px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm" data-week="3">Week 3</button>
+    <button onclick="changeWeek(4)" class="week-btn px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm" data-week="4">Week 4 (Murph)</button>
+    <button onclick="changeWeek(5)" class="week-btn px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm" data-week="5">Week 5</button>
+    <button onclick="changeWeek(6)" class="week-btn px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm" data-week="6">Week 6</button>
+    <button onclick="changeWeek(7)" class="week-btn px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm" data-week="7">Week 7</button>
+    <button onclick="changeWeek(8)" class="week-btn px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm" data-week="8">Week 8 (Murph)</button>
+</div>
 
             <!-- Day display -->
             <div id="workout-display" class="space-y-4"></div>
