@@ -23,7 +23,7 @@
     <button onclick="showTimer('forTime')" class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600">For Time</button>
     <button onclick="showTimer('amrap')" class="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">AMRAP</button>
 </div>
-        <!-- Timer Modal -->
+     <!-- Timer Modal -->
 <div id="timerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 pt-4">
     <div class="bg-white rounded-lg p-6 w-11/12 max-w-md">
         <div class="flex justify-between items-center mb-4">
@@ -37,13 +37,13 @@
         
         <!-- Timer Display -->
         <div class="text-center mb-6">
-            <div class="text-6xl font-bold mb-4" id="timerDisplay">00:00</div>
+            <div class="text-6xl font-bold mb-2" id="timerDisplay">00:00</div>
             <div id="phaseDisplay" class="text-xl font-bold text-yellow-600 mb-2 hidden">GET READY</div>
             <div id="emomRound" class="text-2xl font-semibold mb-2 hidden">Round: 1</div>
         </div>
 
-        <!-- Timer Controls -->
-        <div class="space-y-4">
+        <!-- Timer Controls - Will be hidden when running -->
+        <div id="timerControls" class="space-y-4">
             <!-- Quick Set Buttons -->
             <div class="flex flex-wrap gap-2 mb-4">
                 <button onclick="quickSet(1,0)" class="px-3 py-1 bg-blue-100 text-blue-800 rounded">1:00</button>
@@ -62,15 +62,16 @@
                 <label class="block text-sm font-medium text-gray-700">Rounds:</label>
                 <input type="number" id="totalRounds" placeholder="Number of rounds" class="w-full p-2 border rounded" min="1">
             </div>
+        </div>
 
-            <!-- Control Buttons -->
-            <div class="flex space-x-2">
-                <button onclick="startTimer()" id="startBtn" class="w-1/2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Start</button>
-                <button onclick="pauseTimer()" id="pauseBtn" class="w-1/2 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 hidden">Pause</button>
-                <button onclick="resetTimer()" class="w-1/2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Reset</button>
-            </div>
+        <!-- Control Buttons -->
+        <div class="flex space-x-2">
+            <button onclick="startTimer()" id="startBtn" class="w-1/2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Start</button>
+            <button onclick="pauseTimer()" id="pauseBtn" class="w-1/2 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 hidden">Pause</button>
+            <button onclick="resetTimer()" class="w-1/2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Reset</button>
         </div>
     </div>
+</div>
 </div>
 
             <!-- Week selector -->
