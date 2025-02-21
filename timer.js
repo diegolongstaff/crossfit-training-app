@@ -10,7 +10,9 @@ class WorkoutTimer {
         this.totalRounds = 0;
         this.workSeconds = 0;
         this.restSeconds = 0;
-        this.timerMode = 'standard'; // standard, emom, tabata, forTime, amrap, interval
+        this.timerMode = 'standard'; // standard, emom, tabata, forTime, amrap
+        this.isCountingDown = false;
+        this.countdownSeconds = 10;
         
         // DOM elements
         this.timerDisplay = document.getElementById('timerDisplay');
@@ -59,9 +61,6 @@ class WorkoutTimer {
         if (document.getElementById('tabataSettings')) {
             document.getElementById('tabataSettings').classList.add('hidden');
         }
-        if (document.getElementById('intervalSettings')) {
-            document.getElementById('intervalSettings').classList.add('hidden');
-        }
         if (document.getElementById('amrapSettings')) {
             document.getElementById('amrapSettings').classList.add('hidden');
         }
@@ -109,18 +108,6 @@ class WorkoutTimer {
                     document.getElementById('amrapSettings').classList.remove('hidden');
                 }
                 break;
-            case 'interval':
-                document.getElementById('timerTitle').textContent = 'Interval Timer';
-                if (document.getElementById('intervalSettings')) {
-                    document.getElementById('intervalSettings').classList.remove('hidden');
-                }
-                if (document.getElementById('emomRound')) {
-                    document.getElementById('emomRound').classList.remove('hidden');
-                }
-                if (document.getElementById('phaseDisplay')) {
-                    document.getElementById('phaseDisplay').classList.remove('hidden');
-                }
-                break;
             default: // standard
                 document.getElementById('timerTitle').textContent = 'Timer';
                 this.isEmom = false;
@@ -151,68 +138,133 @@ class WorkoutTimer {
         }
     }
     
+    startCountdown() {
+        this.isCountingDown = true;
+        this.countdownSeconds = 10;
+        
+        if (document.getElementById('phaseDisplay')) {
+            document.getElementById('phaseDisplay').textContent = "GET READY";
+            document.getElementById('phaseDisplay').classList.remove('hidden');
+            document.getElementById('phaseDisplay').className = 'text-xl font-bold text-yellow-600';
+        }
+        
+        this.updateTimerDisplay(this.countdownSeconds);
+        
+        this.timerInterval = setInterval(() => {
+            this.countdownSeconds--;
+            this.updateTimerDisplay(this.countdownSeconds);
+            
+            // Special beeps for countdown
+            if (this.countdownSeconds <= 3 && this.countdownSeconds > 0) {
+                this.createBeepSound(880, 200);
+            } else if (this.countdownSeconds === 0) {
+                // GO beep
+                this.createBeepSound(1200, 400);
+                
+                clearInterval(this.timerInterval);
+                this.isCountingDown = false;
+                
+                if (document.getElementById('phaseDisplay')) {
+                    document.getElementById('phaseDisplay').textContent = "GO!";
+                    document.getElementById('phaseDisplay').className = 'text-xl font-bold text-green-600';
+                    
+                    // Hide "GO!" after 1 second
+                    setTimeout(() => {
+                        if (this.timerMode === 'tabata') {
+                            document.getElementById('phaseDisplay').textContent = "WORK";
+                        } else {
+                            document.getElementById('phaseDisplay').classList.add('hidden');
+                        }
+                    }, 1000);
+                }
+                
+                // Start the actual timer
+                this.startActualTimer();
+            }
+        }, 1000);
+    }
+    
     startTimer() {
         if (this.isRunning) return;
         
-        if (!this.timeLeft) {
-            // Standard timer settings
-            const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
-            const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
-            this.timeLeft = minutes * 60 + seconds;
-            
-            if (this.isEmom && document.getElementById('totalRounds')) {
-                this.totalRounds = parseInt(document.getElementById('totalRounds').value) || 1;
-                this.currentRound = 1;
-                if (document.getElementById('emomRound')) {
-                    document.getElementById('emomRound').textContent = `Round: ${this.currentRound}`;
-                }
+        // Check if minutes and seconds are set
+        const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+        const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+        
+        // For EMOM, set rounds
+        if (this.timerMode === 'emom' && document.getElementById('totalRounds')) {
+            this.totalRounds = parseInt(document.getElementById('totalRounds').value) || 1;
+            this.currentRound = 1;
+            if (document.getElementById('emomRound')) {
+                document.getElementById('emomRound').textContent = `Round: ${this.currentRound}`;
             }
         }
-
-        if (this.timeLeft > 0) {
-            this.isRunning = true;
-            document.getElementById('startBtn').classList.add('hidden');
-            document.getElementById('pauseBtn').classList.remove('hidden');
-            
-            // For standard timer or simple EMOM
-            const totalTime = this.timeLeft;
+        
+        // Set the time for the timer
+        this.timeLeft = minutes * 60 + seconds;
+        
+        // Return if no time is set
+        if (this.timeLeft <= 0 && this.timerMode !== 'forTime') return;
+        
+        this.isRunning = true;
+        document.getElementById('startBtn').classList.add('hidden');
+        document.getElementById('pauseBtn').classList.remove('hidden');
+        
+        // Start with countdown
+        this.startCountdown();
+    }
+    
+    startActualTimer() {
+        // For standard timer or simple EMOM
+        const totalTime = this.timeLeft;
+        this.updateTimerDisplay(this.timeLeft, totalTime);
+        
+        if (this.timerMode === 'forTime') {
+            // For Time is a count up timer
+            let elapsedTime = 0;
+            this.timerInterval = setInterval(() => {
+                elapsedTime++;
+                const minutes = Math.floor(elapsedTime / 60);
+                const seconds = elapsedTime % 60;
+                this.timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+            return;
+        }
+        
+        this.timerInterval = setInterval(() => {
+            this.timeLeft--;
             this.updateTimerDisplay(this.timeLeft, totalTime);
             
-            this.timerInterval = setInterval(() => {
-                this.timeLeft--;
-                this.updateTimerDisplay(this.timeLeft, totalTime);
-                
-                if (this.timeLeft <= 3 && this.timeLeft > 0) {
-                    this.createBeepSound(880);
-                }
-                
-                if (this.timeLeft === 0) {
-                    if (this.isEmom && this.currentRound < this.totalRounds) {
-                        // For EMOM, restart timer for next round
-                        this.createBeepSound(440, 200);
-                        this.createBeepSound(880, 200);
-                        this.currentRound++;
-                        if (document.getElementById('emomRound')) {
-                            document.getElementById('emomRound').textContent = `Round: ${this.currentRound}`;
-                        }
-                        const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
-                        const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
-                        this.timeLeft = minutes * 60 + seconds;
-                        this.updateTimerDisplay(this.timeLeft, totalTime);
-                    } else {
-                        // Timer completed
-                        this.createBeepSound(440, 300);
-                        this.createBeepSound(880, 300);
-                        this.createBeepSound(440, 300);
-                        
-                        clearInterval(this.timerInterval);
-                        this.isRunning = false;
-                        document.getElementById('startBtn').classList.remove('hidden');
-                        document.getElementById('pauseBtn').classList.add('hidden');
+            if (this.timeLeft <= 3 && this.timeLeft > 0) {
+                this.createBeepSound(880);
+            }
+            
+            if (this.timeLeft === 0) {
+                if (this.isEmom && this.currentRound < this.totalRounds) {
+                    // For EMOM, restart timer for next round
+                    this.createBeepSound(440, 200);
+                    this.createBeepSound(880, 200);
+                    this.currentRound++;
+                    if (document.getElementById('emomRound')) {
+                        document.getElementById('emomRound').textContent = `Round: ${this.currentRound}`;
                     }
+                    const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+                    const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+                    this.timeLeft = minutes * 60 + seconds;
+                    this.updateTimerDisplay(this.timeLeft, totalTime);
+                } else {
+                    // Timer completed
+                    this.createBeepSound(440, 300);
+                    this.createBeepSound(880, 300);
+                    this.createBeepSound(440, 300);
+                    
+                    clearInterval(this.timerInterval);
+                    this.isRunning = false;
+                    document.getElementById('startBtn').classList.remove('hidden');
+                    document.getElementById('pauseBtn').classList.add('hidden');
                 }
-            }, 1000);
-        }
+            }
+        }, 1000);
     }
     
     pauseTimer() {
@@ -225,6 +277,7 @@ class WorkoutTimer {
     resetTimer() {
         clearInterval(this.timerInterval);
         this.isRunning = false;
+        this.isCountingDown = false;
         this.timeLeft = 0;
         this.currentRound = 1;
         this.updateTimerDisplay(0);
@@ -233,6 +286,10 @@ class WorkoutTimer {
         
         if (this.isEmom && document.getElementById('emomRound')) {
             document.getElementById('emomRound').textContent = 'Round: 1';
+        }
+        
+        if (document.getElementById('phaseDisplay')) {
+            document.getElementById('phaseDisplay').classList.add('hidden');
         }
     }
 }
@@ -243,6 +300,41 @@ let workoutTimer;
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     workoutTimer = new WorkoutTimer();
+    
+    // Add elements for Tabata if they don't exist
+    if (!document.getElementById('tabataSettings')) {
+        const tabataSettings = document.createElement('div');
+        tabataSettings.id = 'tabataSettings';
+        tabataSettings.className = 'hidden space-y-2';
+        tabataSettings.innerHTML = `
+            <label class="block text-sm font-medium text-gray-700">Rounds:</label>
+            <input type="number" id="tabataRounds" placeholder="Number of rounds" class="w-full p-2 border rounded" min="1" value="8">
+            
+            <div class="flex space-x-2">
+                <div class="w-1/2">
+                    <label class="block text-sm font-medium text-gray-700">Work (sec):</label>
+                    <input type="number" id="workSecondsInput" placeholder="Work seconds" class="w-full p-2 border rounded" min="1" value="20">
+                </div>
+                <div class="w-1/2">
+                    <label class="block text-sm font-medium text-gray-700">Rest (sec):</label>
+                    <input type="number" id="restSecondsInput" placeholder="Rest seconds" class="w-full p-2 border rounded" min="1" value="10">
+                </div>
+            </div>
+        `;
+        document.querySelector('.space-y-4').insertBefore(tabataSettings, document.getElementById('emomSettings').nextSibling);
+    }
+    
+    // Add AMRAP settings if they don't exist
+    if (!document.getElementById('amrapSettings')) {
+        const amrapSettings = document.createElement('div');
+        amrapSettings.id = 'amrapSettings';
+        amrapSettings.className = 'hidden space-y-2';
+        amrapSettings.innerHTML = `
+            <label class="block text-sm font-medium text-gray-700">Warning at (sec):</label>
+            <input type="number" id="amrapWarnTime" placeholder="Warning seconds" class="w-full p-2 border rounded" min="0" value="60">
+        `;
+        document.querySelector('.space-y-4').insertBefore(amrapSettings, document.getElementById('emomSettings').nextSibling);
+    }
 });
 
 // Global functions that connect HTML to timer class
