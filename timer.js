@@ -17,6 +17,9 @@ function showTimer(type) {
     document.getElementById('emomSettings').classList.toggle('hidden', !isEmom);
     document.getElementById('emomRound').classList.toggle('hidden', !isEmom);
     
+    // Show controls if they were hidden
+    document.getElementById('timerControls').classList.remove('hidden');
+    
     resetTimer();
 }
 
@@ -40,8 +43,12 @@ function startTimer() {
     if (isEmom) {
         totalRounds = parseInt(document.getElementById('totalRounds').value) || 1;
         currentRound = 1;
-        document.getElementById('emomRound').textContent = `Round: ${currentRound}`;
+        document.getElementById('emomRound').textContent = `Round: ${currentRound} of ${totalRounds}`;
+        document.getElementById('emomRound').classList.remove('hidden');
     }
+    
+    // Hide the controls to make timer more compact
+    document.getElementById('timerControls').classList.add('hidden');
     
     // Show and start the countdown
     isRunning = true;
@@ -101,7 +108,7 @@ function startMainTimer() {
                 beep(880, 300);
                 
                 currentRound++;
-                document.getElementById('emomRound').textContent = `Round: ${currentRound}`;
+                document.getElementById('emomRound').textContent = `Round: ${currentRound} of ${totalRounds}`;
                 
                 const min = parseInt(document.getElementById('minutesInput').value) || 0;
                 const sec = parseInt(document.getElementById('secondsInput').value) || 0;
@@ -118,6 +125,9 @@ function startMainTimer() {
                 isRunning = false;
                 document.getElementById('startBtn').classList.remove('hidden');
                 document.getElementById('pauseBtn').classList.add('hidden');
+                
+                // Show controls again when timer completes
+                document.getElementById('timerControls').classList.remove('hidden');
             }
         }
     }, 1000);
@@ -139,6 +149,9 @@ function resetTimer() {
     timeLeft = 0;
     currentRound = 1;
     
+    // Show controls again
+    document.getElementById('timerControls').classList.remove('hidden');
+    
     document.getElementById('timerDisplay').textContent = "00:00";
     document.getElementById('startBtn').classList.remove('hidden');
     document.getElementById('pauseBtn').classList.add('hidden');
@@ -146,6 +159,7 @@ function resetTimer() {
     
     if (document.getElementById('emomRound')) {
         document.getElementById('emomRound').textContent = "Round: 1";
+        document.getElementById('emomRound').classList.add('hidden');
     }
 }
 
@@ -200,9 +214,10 @@ document.addEventListener('DOMContentLoaded', function() {
         phaseDisplay.className = 'text-xl font-bold text-yellow-600 mb-2 hidden';
         timerContainer.insertBefore(phaseDisplay, document.getElementById('emomRound').nextSibling);
     }
-    // Add this at the end of your timer.js file
+});
+
+// Add this at the end of your timer.js file
 function toggleFloatingControls() {
   const controls = document.getElementById('floating-controls');
   controls.classList.toggle('hidden');
 }
-});
