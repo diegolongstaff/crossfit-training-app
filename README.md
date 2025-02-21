@@ -29,7 +29,7 @@ A mobile-friendly web application for following a 4-week CrossFit training progr
 
 ## How to Use
 
-1. Visit the app URL: [https://[your-username].github.io/crossfit-training-app](https://[your-username].github.io/crossfit-training-app)
+1. Visit the app URL: [https://diegolongstaff.github.io/crossfit-training-app/](https://diegolongstaff.github.io/crossfit-training-app/)
 
 2. Add to Home Screen:
    ### iOS (Safari)
