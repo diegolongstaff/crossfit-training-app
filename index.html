@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrossFit Training</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Training App">
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-md mx-auto p-4">
+        <!-- Timer Modal -->
+        <div id="timerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-11/12 max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold" id="timerTitle">Timer</h2>
+                    <button onclick="closeTimer()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Timer Display -->
+                <div class="text-center mb-6">
+                    <div class="text-6xl font-bold mb-4" id="timerDisplay">00:00</div>
+                    <div id="emomRound" class="text-2xl font-semibold mb-2 hidden">Round: 1</div>
+                    <div id="nextUp" class="text-lg text-gray-600 hidden">Next: 00:00</div>
+                </div>
+
+                <!-- Timer Controls -->
+                <div class="space-y-4">
+                    <div class="flex space-x-2 mb-4">
+                        <input type="number" id="minutesInput" placeholder="Minutes" class="w-1/2 p-2 border rounded" min="0">
+                        <input type="number" id="secondsInput" placeholder="Seconds" class="w-1/2 p-2 border rounded" min="0" max="59">
+                    </div>
+                    
+                    <!-- EMOM Settings -->
+                    <div id="emomSettings" class="hidden space-y-2">
+                        <input type="number" id="totalRounds" placeholder="Number of rounds" class="w-full p-2 border rounded" min="1">
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button onclick="startTimer()" id="startBtn" class="w-1/2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Start</button>
+                        <button onclick="pauseTimer()" id="pauseBtn" class="w-1/2 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 hidden">Pause</button>
+                        <button onclick="resetTimer()" class="w-1/2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-4">
+            <h1 class="text-2xl font-bold mb-4">Training Program</h1>
+            
+            <!-- Timer Buttons -->
+            <div class="flex space-x-2 mb-4">
+                <button onclick="showTimer('standard')" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Timer</button>
+                <button onclick="showTimer('emom')" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">EMOM</button>
+            </div>
+
+            <!-- Week selector -->
+            <div class="flex space-x-2 mb-4">
+                <button onclick="changeWeek(1)" class="week-btn px-4 py-2 bg-blue-500 text-white rounded" data-week="1">Week 1</button>
+                <button onclick="changeWeek(2)" class="week-btn px-4 py-2 bg-gray-300 text-gray-700 rounded" data-week="2">Week 2</button>
+                <button onclick="changeWeek(3)" class="week-btn px-4 py-2 bg-gray-300 text-gray-700 rounded" data-week="3">Week 3</button>
+                <button onclick="changeWeek(4)" class="week-btn px-4 py-2 bg-gray-300 text-gray-700 rounded" data-week="4">Week 4</button>
+            </div>
+
+            <!-- Day display -->
+            <div id="workout-display" class="space-y-4"></div>
+
+            <!-- Notes section -->
+            <div class="mt-4">
+                <h2 class="text-lg font-semibold mb-2">Workout Notes</h2>
+                <textarea id="notes" class="w-full h-24 p-2 border rounded" placeholder="Add your notes here..."></textarea>
+                <button onclick="saveNotes()" class="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save Notes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Program data - 4 weeks of Murph prep
+        const programData = {
+            1: {
+                Mon: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Light row/bike',
+                            '3 rounds:',
+                            '5 inchworm + shoulder taps',
+                            '5 ring rows',
+                            '10 air squats'
+                        ],
+                        'STRENGTH': [
+                            'Back Squat',
+                            '4 x 3 @ 80% (104kg)',
+                            'Rest 2-3 min',
+                            '1 x AMRAP @ 70% (91kg)'
+                        ],
+                        'CONDITIONING': [
+                            'EMOM 24:',
+                            'Min 1: 12 cal row',
+                            'Min 2: 8 power clean (60kg)',
+                            'Min 3: 15 wall balls (9kg)',
+                            'Min 4: 12 burpees'
+                        ]
+                    },
+                    completed: false
+                },
+                Tue: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Jump rope/run',
+                            '3 rounds:',
+                            '5 strict pull-ups',
+                            '10 push-ups',
+                            '15 mountain climbers'
+                        ],
+                        'STRENGTH': [
+                            'A. Strict Press',
+                            '5 x 5 linear progression',
+                            'Start @ 75%, +2kg/set',
+                            'Rest 2 min',
+                            '',
+                            'B. Weighted Pull-ups',
+                            '5 x 3 consistent load',
+                            'Rest 90 sec'
+                        ],
+                        'CONDITIONING': [
+                            'For Time (12 min cap):',
+                            '50 wallballs (9kg)',
+                            '40 cal bike',
+                            '30 devil press (2x22kg)',
+                            '20 cal bike',
+                            '10 wallballs'
+                        ]
+                    },
+                    completed: false
+                },
+                Wed: {
+                    sections: {
+                        'REST': ['Active Recovery']
+                    },
+                    completed: false
+                },
+                Thu: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Light assault bike',
+                            '3 rounds:',
+                            '10 PVC pass-throughs',
+                            '10 jumping lunges',
+                            '5 strict HSPU prog'
+                        ],
+                        'STRENGTH': [
+                            'Clean & Jerk Complex',
+                            'Every 3 min x 7 sets:',
+                            '1 clean pull',
+                            '1 hang clean',
+                            '1 clean',
+                            '1 jerk',
+                            'Build sets 1-5, maintain 6-7'
+                        ],
+                        'CONDITIONING': [
+                            '5 Rounds:',
+                            '400m run',
+                            '15 power snatch (43kg)',
+                            'Rest 2 min'
+                        ]
+                    },
+                    completed: false
+                },
+                Fri: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Row/bike/run',
+                            '2 rounds:',
+                            '10 GHD hip ext',
+                            '10 KB swings',
+                            '10 ring rows'
+                        ],
+                        'STRENGTH': [
+                            'Deadlift',
+                            '5 x 2 @ 85%',
+                            '3 x 5 @ 75%',
+                            'Rest 2-3 min'
+                        ],
+                        'CONDITIONING': [
+                            'A. Tabata (4 min):',
+                            'Alt: cal row/burpees',
+                            '',
+                            'B. 12 min AMRAP:',
+                            '6 DB snatch ea (22kg)',
+                            '12 box jumps (24")',
+                            '18 ab mat sit-ups'
+                        ]
+                    },
+                    completed: false
+                },
+                Sat: {
+                    sections: {
+                        'REST': ['Recovery']
+                    },
+                    completed: false
+                },
+                Sun: {
+                    sections: {
+                        'ZONE 2': [
+                            '50-70 min:',
+                            'Run/bike/row',
+                            'Keep HR 65-75% max',
+                            'Conversational pace'
+                        ]
+                    },
+                    completed: false
+                }
+            },
+            2: {
+                Mon: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Assault bike',
+                            '3 rounds:',
+                            '10 PVC good mornings',
+                            '10 walking lunges',
+                            '5 strict pull-ups'
+                        ],
+                        'STRENGTH': [
+                            'Front Squat',
+                            '5 x 2 @ 85% (93.5kg)',
+                            '2 x 5 @ 75% (82.5kg)',
+                            'Rest 2-3 min'
+                        ],
+                        'CORE': [
+                            '3 rounds:',
+                            '45s L-sit hold',
+                            '15 GHD sit-ups',
+                            'Rest 60s'
+                        ],
+                        'CONDITIONING': [
+                            '10-9-8-7-6-5-4-3-2-1:',
+                            'Thrusters (60kg)',
+                            'CTB pull-ups',
+                            '18 min cap'
+                        ]
+                    },
+                    completed: false
+                },
+                Tue: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: DU practice',
+                            '3 rounds:',
+                            '5 ring dips',
+                            '10 DB press/arm',
+                            '15 jumping jacks'
+                        ],
+                        'STRENGTH': [
+                            'Push Press',
+                            '8 x 2 @ 80%',
+                            'Focus: speed & lockout',
+                            'Rest 90s'
+                        ],
+                        'CONDITIONING': [
+                            'A. Every 2 min x 16:',
+                            '3 squat clean (75kg)',
+                            'Max cal row in remaining',
+                            '',
+                            'B. 3 rounds:',
+                            '15 DB PP/arm (22kg)',
+                            '20 V-ups'
+                        ]
+                    },
+                    completed: false
+                },
+                Wed: {
+                    sections: {
+                        'REST': ['Active Recovery']
+                    },
+                    completed: false
+                },
+                Thu: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Row/run alt min',
+                            '2 rounds:',
+                            '10 hollow rocks',
+                            '10 supermans',
+                            '5 strict dips'
+                        ],
+                        'STRENGTH': [
+                            'A. Snatch',
+                            'Every 2 min x 12:',
+                            '1 snatch pull',
+                            '1 high hang snatch',
+                            '1 snatch',
+                            'Build across sets',
+                            '',
+                            'B. OHS',
+                            '4 x 3 @ 75-80%',
+                            'Rest 2 min'
+                        ],
+                        'CONDITIONING': [
+                            'For Time:',
+                            '21-15-9',
+                            'Power clean (70kg)',
+                            'Bar MU (scale)',
+                            '400m run each round'
+                        ]
+                    },
+                    completed: false
+                },
+                Fri: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Light bike',
+                            '3 rounds:',
+                            '10 banded good mornings',
+                            '10 KB RDLs',
+                            '10 ab mat sit-ups'
+                        ],
+                        'STRENGTH': [
+                            'Back Squat',
+                            'Heavy single',
+                            '3 x 3 @ 85% of day',
+                            'Rest 2-3 min'
+                        ],
+                        'CONDITIONING': [
+                            'A. Every 3 min x 15:',
+                            '20 cal AB',
+                            'Max HSPU in remaining',
+                            '',
+                            'B. 10 min AMRAP:',
+                            '8 PC (60kg)',
+                            '16 KB swing (32kg)',
+                            '24 DU'
+                        ]
+                    },
+                    completed: false
+                },
+                Sat: {
+                    sections: {
+                        'REST': ['Recovery']
+                    },
+                    completed: false
+                },
+                Sun: {
+                    sections: {
+                        'ZONE 2': [
+                            '50-70 min:',
+                            'Run/bike/row',
+                            'Keep HR 65-75% max',
+                            'Conversational pace'
+                        ]
+                    },
+                    completed: false
+                }
+            },
+            3: {
+                Mon: {
+                    sections: {
+                        'WARMUP': [
+                            '800m easy run',
+                            '3 rounds:',
+                            '10 push-ups',
+                            '15 air squats',
+                            '5 pull-ups'
+                        ],
+                        'STRENGTH': [
+                            'Back Squat',
+                            '3 x 5 @ 75% (97.5kg)',
+                            '2 x 2 @ 85% (110.5kg)',
+                            'Rest 2-3 min'
+                        ],
+                        'CONDITIONING': [
+                            '5 Rounds:',
+                            '400m run',
+                            '15 pull-ups',
+                            '30 push-ups',
+                            '45 air squats',
+                            'Rest 2:30'
+                        ]
+                    },
+                    completed: false
+                },
+                Tue: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Row/bike',
+                            '3 rounds:',
+                            '10 band pull-aparts',
+                            '10 push-ups',
+                            '20 mountain climbers'
+                        ],
+                        'STRENGTH': [
+                            'A. Bench Press',
+                            '5 x 5 linear progression',
+                            'Start @ 70%, +2.5kg/set',
+                            'Rest 2 min',
+                            '',
+                            'B. Pull-ups',
+                            '5 x max reps',
+                            'Rest 2 min',
+                            'Record total reps'
+                        ],
+                        'CONDITIONING': [
+                            'For Time:',
+                            '50 push-ups',
+                            '75 air squats',
+                            '800m run',
+                            '40 push-ups',
+                            '60 air squats',
+                            '600m run',
+                            '30 push-ups',
+                            '45 air squats',
+                            '400m run'
+                        ]
+                    },
+                    completed: false
+                },
+                Wed: {
+                    sections: {
+                        'REST': ['Active Recovery']
+                    },
+                    completed: false
+                },
+                Thu: {
+                    sections: {
+                        'WARMUP': [
+                            '1200m easy run',
+                            '2 rounds:',
+                            '10 ring rows',
+                            '15 push-ups',
+                            '20 walking lunges'
+                        ],
+                        'STRENGTH': [
+                            'A. Clean & Jerk',
+                            'Every 2 min x 12:',
+                            '1 clean + 2 jerks',
+                            'Build to heavy',
+                            '',
+                            'B. Core',
+                            '4 rounds:',
+                            '30s hollow hold',
+                            '30s arch hold',
+                            '15 GHD sit-ups',
+                            'Rest 60s'
+                        ],
+                        'CONDITIONING': [
+                            'EMOM 24:',
+                            'Min 1: 15 pull-ups',
+                            'Min 2: 25 push-ups',
+                            'Min 3: 35 air squats',
+                            'Min 4: 200m run',
+                            'Score rounds completed'
+                        ]
+                    },
+                    completed: false
+                },
+                Fri: {
+                    sections: {
+                        'WARMUP': [
+                            '5 min: Row/run rotation',
+                            '3 rounds:',
+                            '10 band pull-aparts',
+                            '10 DB RDLs',
+                            '10 hollow rocks'
+                        ],
+                        'STRENGTH': [
+                            'A. Deadlift',
+                            '4 x 3 @ 80%',
+                            '1 x AMRAP @ 70%',
+                            'Rest 2-3 min',
+                            '',
+                            'B. Max Set Pull-ups',
+                            '3 attempts',
+                            'Rest 3 min',
+                            'Record best set'
+                        ],
+                        'CONDITIONING': [
+                            '3 Rounds:',
+                            '800m run',
+                            '25 pull-ups',
+                            '50 push-ups',
+                            '75 air squats',
+                            '25 min cap'
+                        ]
+                    },
+                    completed: false
+                },
+                Sat: {
+                    sections: {
+                        'REST': ['Recovery']
+                    },
+                    completed: false
+                },
+                Sun: {
+                    sections: {
+                        'ZONE 2': [
+                            '50-70 min:',
+                            'Run/bike/row',
+                            'Keep HR 65-75% max',
+                            'Conversational pace'
+                        ]
+                    },
+                    completed: false
+                }
+            },
+            4: {
+                Mon: {
+                    sections: {
+                        'WARMUP': [
+                            '1200m easy run',
+                            '2 rounds:',
+                            '10 pull-ups',
+                            '20 push-ups',
+                            '30 air squats'
+                        ],
+                        'STRENGTH': [
+                            'Front Squat',
+                            '3 x 3 @ 80% (88kg)',
+                            '2 x 5 @ 70% (77kg)',
+                            'Rest 2-3 min'
+                        ],
+                        'CONDITIONING': [
+                            'A. 1 mile time trial',
+                            'Record time',
+                            'Rest 5 minutes',
+                            '',
+                            'B. 5 rounds:',
+                            '10 pull-ups',
+                            '20 push-ups',
+                            '30 air squats',
+                            'Record total time'
+                        ]
+                    },
+                    completed: false
+                },
+                Tue: {
+                    sections: {
+                        'WARMUP': [
+                            '800m run',
+                            '2 rounds:',
+                            '5 pull-ups',
+                            '10 push-ups',
+                            '15 air squats'
+                        ],
+                        'STRENGTH': [
+                            'Push Press',
+                            '5 x 2 @ 75%',
+                            'Focus: bar speed',
+                            'Rest 2 min'
+                        ],
+                        'CONDITIONING': [
+                            'For Time:',
+                            '75 pull-ups',
+                            '150 push-ups',
+                            '225 air squats',
+                            'Partition as needed',
+                            '35 min cap'
+                        ]
+                    },
+                    completed: false
+                },
+                Wed: {
+                    sections: {
+                        'REST': ['Active Recovery']
+                    },
+                    completed: false
+                },
+                Thu: {
+                    sections: {
+                        'WARMUP': [
+                            '1 mile easy run',
+                            'Dynamic stretching',
+                            'Movement prep',
+                            'Light pull-up/push-up'
+                        ],
+                        'STRENGTH': [
+                            'A. Pull-ups',
+                            '5 sets to failure',
+                            'Rest 3 min',
+                            'Record all reps',
+                            '',
+                            'B. Push-ups',
+                            '3 sets to failure',
+                            'Rest 2 min',
+                            'Record all reps'
+                        ],
+                        'CONDITIONING': [
+                            'A. 800m time trial',
+                            'Record time',
+                            'Rest 3 minutes',
+                            '',
+                            'B. 21-15-9:',
+                            'Pull-ups',
+                            'Push-ups',
+                            'Air squats',
+                            '400m run each round'
+                        ]
+                    },
+                    completed: false
+                },
+                Fri: {
+                    sections: {
+                        'WARMUP': [
+                            '800m easy run',
+                            'Full body mobility',
+                            'Movement activation',
+                            '1 round:',
+                            '5 pull-ups',
+                            '10 push-ups',
+                            '15 air squats'
+                        ],
+                        'SKILL': [
+                            'Practice efficient patterns:',
+                            'Pull-up technique',
+                            'Push-up form',
+                            'Air squat mobility'
+                        ],
+                        'CONDITIONING': [
+                            '2 Rounds at 70% effort:',
+                            '400m run',
+                            '10 pull-ups',
+                            '20 push-ups',
+                            '30 air squats',
+                            'Focus on form'
+                        ]
+                    },
+                    completed: false
+                },
+                Sat: {
+                    sections: {
+                        'REST': ['Recovery']
+                    },
+                    completed: false
+                },
+                Sun: {
+                    sections: {
+                        'ZONE 2': [
+                            '50-70 min:',
+                            'Run/bike/row',
+                            'Keep HR 65-75% max',
+                            'Conversational pace'
+                        ]
+                    },
+                    completed: false
+                }
+            }
+        };
+
+        let currentWeek = 1;
+        let currentDay = new Date().getDay();
+        const dayMapping = {
+            1: 'Mon',
+            2: 'Tue',
+            3: 'Wed',
+            4: 'Thu',
+            5: 'Fri',
+            6: 'Sat',
+            0: 'Sun'
+        };
+
+        // Initialize from localStorage
+        function initializeFromStorage() {
+            const savedData = localStorage.getItem('trainingData');
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                Object.assign(programData, parsedData);
+            }
+
+            const savedNotes = localStorage.getItem('workoutNotes');
+            if (savedNotes) {
+                document.getElementById('notes').value = savedNotes;
+            }
+        }
+
+        // Save to localStorage
+        function saveToStorage() {
+            localStorage.setItem('trainingData', JSON.stringify(programData));
+        }
+
+        function saveNotes() {
+            const notes = document.getElementById('notes').value;
+            localStorage.setItem('workoutNotes', notes);
+            alert('Notes saved!');
+        }
+
+        // Change displayed week
+        function changeWeek(week) {
+            currentWeek = week;
+            document.querySelectorAll('.week-btn').forEach(btn => {
+                const btnWeek = parseInt(btn.dataset.week);
+                btn.className = `week-btn px-4 py-2 rounded ${btnWeek === week ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'}`;
+            });
+            displayWorkout();
+        }
+
+        // Toggle workout completion
+        function toggleCompletion(day) {
+            const weekData = programData[currentWeek];
+            if (weekData && weekData[day]) {
+                weekData[day].completed = !weekData[day].completed;
+                saveToStorage();
+                displayWorkout();
+            }
+        }
+
+        // Display workout
+        function displayWorkout() {
+            const container = document.getElementById('workout-display');
+            container.innerHTML = '';
+
+            const week = programData[currentWeek];
+            if (!week) return;
+
+            Object.entries(week).forEach(([day, dayData]) => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'bg-gray-50 rounded p-4 mb-4';
+
+                // Day header with completion toggle
+                const header = document.createElement('div');
+                header.className = 'flex justify-between items-center mb-2';
+                header.innerHTML = `
+                    <h2 class="text-xl font-bold">${day}</h2>
+                    <input type="checkbox" 
+                           ${dayData.completed ? 'checked' : ''} 
+                           onchange="toggleCompletion('${day}')"
+                           class="h-6 w-6">
+                `;
+                dayElement.appendChild(header);
+
+                // Workout sections
+                Object.entries(dayData.sections).forEach(([section, exercises]) => {
+                    const sectionElement = document.createElement('div');
+                    sectionElement.className = 'mb-4';
+                    sectionElement.innerHTML = `
+                        <h3 class="font-semibold text-blue-600 mb-2">${section}</h3>
+                        <ul class="list-none pl-4">
+                            ${exercises.map(ex => `<li class="mb-1">${ex}</li>`).join('')}
+                        </ul>
+                    `;
+                    dayElement.appendChild(sectionElement);
+                });
+
+                container.appendChild(dayElement);
+            });
+        }
+
+        // Timer variables
+        let timerInterval;
+        let timeLeft = 0;
+        let isRunning = false;
+        let isEmom = false;
+        let currentRound = 1;
+        let totalRounds = 0;
+
+        // Create beep sound
+        function createBeepSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.5;
+                
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 200);
+            } catch (e) {
+                console.log("Audio not supported");
+            }
+        }
+
+        // Timer functions
+        function showTimer(type) {
+            document.getElementById('timerModal').classList.remove('hidden');
+            isEmom = type === 'emom';
+            document.getElementById('timerTitle').textContent = isEmom ? 'EMOM Timer' : 'Timer';
+            document.getElementById('emomSettings').classList.toggle('hidden', !isEmom);
+            document.getElementById('emomRound').classList.toggle('hidden', !isEmom);
+            document.getElementById('nextUp').classList.toggle('hidden', !isEmom);
+            resetTimer();
+        }
+
+        function closeTimer() {
+            document.getElementById('timerModal').classList.add('hidden');
+            resetTimer();
+        }
+
+        function updateTimerDisplay(timeInSeconds) {
+            const minutes = Math.floor(timeInSeconds / 60);
+            const seconds = timeInSeconds % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                if (!timeLeft) {
+                    const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+                    const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+                    timeLeft = minutes * 60 + seconds;
+                    
+                    if (isEmom) {
+                        totalRounds = parseInt(document.getElementById('totalRounds').value) || 1;
+                        currentRound = 1;
+                        document.getElementById('emomRound').textContent = `Round: ${currentRound}`;
+                    }
+                }
+
+                if (timeLeft > 0) {
+                    isRunning = true;
+                    document.getElementById('startBtn').classList.add('hidden');
+                    document.getElementById('pauseBtn').classList.remove('hidden');
+                    
+                    timerInterval = setInterval(() => {
+                        timeLeft--;
+                        updateTimerDisplay(timeLeft);
+
+                        if (timeLeft <= 3 && timeLeft > 0) {
+                            createBeepSound();
+                        }
+
+                        if (timeLeft === 0) {
+                            if (isEmom && currentRound < totalRounds) {
+                                createBeepSound();
+                                createBeepSound();
+                                currentRound++;
+                                document.getElementById('emomRound').textContent = `Round: ${currentRound}`;
+                                timeLeft = parseInt(document.getElementById('minutesInput').value) * 60 + 
+                                         parseInt(document.getElementById('secondsInput').value);
+                            } else {
+                                createBeepSound();
+                                createBeepSound();
+                                createBeepSound();
+                                clearInterval(timerInterval);
+                                isRunning = false;
+                                document.getElementById('startBtn').classList.remove('hidden');
+                                document.getElementById('pauseBtn').classList.add('hidden');
+                            }
+                        }
+                    }, 1000);
+                }
+            }
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            timeLeft = 0;
+            currentRound = 1;
+            updateTimerDisplay(0);
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            if (isEmom) {
+                document.getElementById('emomRound').textContent = 'Round: 1';
+            }
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFromStorage();
+            changeWeek(1);
+        });
+    </script>
+</body>
+</html>
