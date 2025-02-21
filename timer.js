@@ -200,4 +200,9 @@ document.addEventListener('DOMContentLoaded', function() {
         phaseDisplay.className = 'text-xl font-bold text-yellow-600 mb-2 hidden';
         timerContainer.insertBefore(phaseDisplay, document.getElementById('emomRound').nextSibling);
     }
+    // Add this at the end of your timer.js file
+function toggleFloatingControls() {
+  const controls = document.getElementById('floating-controls');
+  controls.classList.toggle('hidden');
+}
 });
